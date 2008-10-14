@@ -6,6 +6,9 @@ libMPICUDALissomV2 is a very powerful interface to liblissom_cuda to allow compu
 NOTE: at the moment is unavailable, as I'm finishing coding it.
 This library is also thought of being capable, once ready (it won't take much more), of simulating most of human primary visual cortex [ V1 ] on suitable hardware (currently a 16 GPUs cluster by nVidia, the `cudacluster` ).
 
+NOTE: Remember to copy a fresh liblissom.a and lissom.h file within the directory, to make sure it will work (no problem for compiling under Linux, but better doing it).
+
+
 
 = Acknowledgments =
 
