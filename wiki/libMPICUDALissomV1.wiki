@@ -6,7 +6,7 @@ V1 supports multiGPU processing.
 
 
 
-PLEASE NOTE that the library was modified after some time, corrupting it's function [that is, it doesn't work anymore :P ]
+PLEASE NOTE that the library was modified after some time, corrupting it's function [ that is, it doesn't work anymore :P ]
 Check V2 for the working version; V1 is there only for `historical` reasons.
 
 Please don't try running it, it could crash your system [ or damage your hardware, thought I don't really think so. :P ].
