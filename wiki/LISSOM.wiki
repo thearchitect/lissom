@@ -4,7 +4,7 @@
 Check this pdf for a quick reference to the LISSOM model: 
 [[http://code.google.com/p/lissom/source/browse/wiki/Presentation.pdf Presentation of the project]]
 
-It can also be useful to visit LISSOM's website [and related pages]: http://homepages.inf.ed.ac.uk/jbednar/rflissom_small.html
+It can also be useful to visit LISSOM's website [ and related pages ] : http://homepages.inf.ed.ac.uk/jbednar/rflissom_small.html
 
  with pdfs from the authors.
 
