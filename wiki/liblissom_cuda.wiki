@@ -1,12 +1,6 @@
 #labels Featured
 = Introduction =
 
-Add your content here.
+The main library. It implements the LISSOM core computations on the GPU.
 
-
-= Details =
-
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+For a quick reference you can read a quick reference (not really useful, but can get to understand the basic functions involved in simulating LISSOM maps): [[http://code.google.com/p/lissom/source/browse/wiki/liblissomReference.pdf QuickReference]]
