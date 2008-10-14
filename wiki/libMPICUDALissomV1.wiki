@@ -1,7 +1,7 @@
 #labels Featured
 = Introduction =
 
-libMPICUDALissomV1 is the first part of a project to port the libLISSOM GPU library to multiGPU systems and to MPI clusters featuring GPU hardware.
+libMPICUDALissomV1 is the first part of a project to port the liblissom_cuda GPU library to multiGPU systems and to MPI clusters featuring GPU hardware.
 V1 supports multiGPU processing.
 
 
