@@ -1,0 +1,3 @@
+-Load from file? it's needed for maps which cannot be executed on a single GPU system [too big]
+
+

@@ -1,0 +1,3 @@
+The software allows easy specification of a hierarchical lissom (inputs from images yet to be done).
+It runs on a cluster of CUDA enabled workstations, using MPI, to distribute maps across the system (training iteration time is sum of every map, but run time stabilizes at max{times})
+

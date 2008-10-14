@@ -1,0 +1,10 @@
+
+#the system will automatically check rexc=MAX(ref, newr)
+
+
+//training
+//load/save
+
+//NOTE: training would be slow as hell (it would serialize simulation); the advantage is straming when running a yet-trained (or a not-epochs limited simulation) simulation
+
+
