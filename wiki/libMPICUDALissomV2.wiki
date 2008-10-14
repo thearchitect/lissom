@@ -1,12 +1,12 @@
 #labels Featured
 = Introduction =
 
-libMPICUDALissomV2 is a very powerful interface to liblissom_cuda
+libMPICUDALissomV2 is a very powerful interface to liblissom_cuda to allow computation of LISSOM maps on multiGPU systems and on clusters of GPU enabled computers [ also these 2 combined, of course ]
+
+NOTE: at the moment is unavailable, as I'm finishing coding it.
+This library is also thought of being capable, once ready (it won't take much more), of simulating most of human primary visual cortex [ V1 ] on suitable hardware (currently a 16 GPUs cluster by nVidia, the `cudacluster` ).
 
 
-= Details =
+= Acknowledgments =
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+I really want to thank nVidia here, for helping me gather access to the computational power and the special hardware I needed, giving me an account on [[http://cudacluster.nvidia.com `cudacluster`]]
