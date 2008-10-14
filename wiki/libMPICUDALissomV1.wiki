@@ -8,3 +8,5 @@ V1 supports multiGPU processing.
 
 PLEASE NOTE that the library was modified after some time, corrupting it's function [that is, it doesn't work anymore :P ]
 Check V2 for the working version; V1 is there only for `historical` reasons.
+
+Also remember to copy a fresh liblissom.a and lissom.h file within the directory, to make sure it will work (no problem for compiling under Linux, but better doing it).
