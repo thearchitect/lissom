@@ -1,8 +1,7 @@
 #labels Featured
-
 = Introduction =
 
-Add your content here.
+libMPICUDALissomV2 is a very powerful interface to liblissom_cuda
 
 
 = Details =
