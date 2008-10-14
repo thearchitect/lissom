@@ -1,0 +1,119 @@
+# comments
+# -first define sections (maps)
+# -define links
+# -define training steps (after maps are defined!)
+
+#NOTE: FLOATS ARE FLOATS!!! WRITE THEM WITH `.0`!!!
+# `f-` stands for float
+
+
+# train/run/loadrun/loadtrain
+ACTION run
+
+
+
+RETINA retina
+#properties: width/height OR size(w==h)
+#            patternsperiteration
+#            something on input, such as gaussian parameters, or presenting real images
+size 36
+
+
+MAP V1
+# parameters: width/height OR size(w==h)
+#             f-rf, scaleareaordensity(0 for area), f-rexc, f-rinhib, f-rexcfinal, f-alphaa, f-alphaexc, f-alphainhib
+#             f-gammaexc, f-gammainhib, settletime, f-lowerthr, f-upperthr
+#             iterations
+size 50
+rf 6.0
+scaleareaordensity 0
+alphaa 0.007
+alphaexc 0.00466167
+alphainhib 0.0330078
+gammaexc 0.9
+gammainhib 0.9
+settletime 9
+lowerthr 0.1
+upperthr 0.65
+iterations 1000
+
+
+LINK retina V1
+
+
+
+
+
+#syntax is: TRAINING <map name> <iteration to start training from>
+#steps are (time)-(starting time)
+
+#gammas are    gamma[x] float [no operator]
+#alpha[x] both with [*f] or [f]
+#settletime [with +[relative to current] or just a number[abs]]
+#the system will automatically check rexc=MAX(ref, newr)
+#only on rexc `*` will affect initial value
+TRAINING V1 0
+[STEP 200]
+lowerthr +0.01
+upperthr +0.01
+rexc *0.6
+
+[STEP 500]
+lowerthr +0.01
+upperthr +0.01
+alphaa *0.7142
+alphae *0.5
+rexc *0.420
+
+[STEP 1000]
+lowerthr +0.03
+upperthr +0.01
+rexc *0.336
+
+[STEP 2000]
+lowerthr +0.03
+upperthr +0.02
+alphaa *0.8
+settletime +1
+rexc *0.269
+
+[STEP 3000]
+lowerthr +0.02
+upperthr +0.03
+rexc *0.215
+
+[STEP 4000]
+lowerthr +0.00
+upperthr +0.03
+alphaa *0.75
+rexc *0.129
+
+[STEP 5000]
+lowerthr +0.01
+upperthr +0.03
+settletime +1
+rexc *0.077
+
+[STEP 6500]
+lowerthr +0.01
+upperthr +0.03
+settletime +1
+rexc *0.046
+
+[STEP 8000]
+lowerthr +0.01
+upperthr +0.03
+settletime +1
+rexc *0.028
+
+[STEP 20000]
+lowerthr +0.01
+upperthr +0.03
+alphaa *0.5
+rexc *0.017
+
+
+
+
+
+
