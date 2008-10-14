@@ -7,3 +7,5 @@ An interesting feature of the system is that it lets the developer describe the 
 
 
 NOTE: in the source code available for download, the really important thing to change while testing is within the `example` directory. Also remember to check `run.sh` for usage.
+
+Also remember to copy a fresh liblissom.a and lissom.h file within the directory, to make sure it will work (no problem for compiling under Linux, but better doing it).
