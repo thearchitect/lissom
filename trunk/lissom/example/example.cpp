@@ -42,7 +42,7 @@ int main() {
 
   Retina *retina = new Retina(RetinaN, RetinaN);
 
-  LISSOM *layer = new LISSOM(N, N, 6.0, retina, 1, 1); //0
+  LISSOM *layer = new LISSOM(N, N, 6.0, retina, 1, 0); //0
   float Rei=layer->rE, Ref=layer->rEf;
 
 //layer->load("net.lissom");
