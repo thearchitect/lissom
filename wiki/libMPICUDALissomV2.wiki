@@ -10,3 +10,5 @@ This library is also thought of being capable, once ready (it won't take much mo
 = Acknowledgments =
 
 I really want to thank nVidia here, for helping me gather access to the computational power and the special hardware I needed, giving me an account on [[http://cudacluster.nvidia.com `cudacluster`]]
+
+I also thank University of North Carolina, for providing me access to their BASS GPU Cluster.
