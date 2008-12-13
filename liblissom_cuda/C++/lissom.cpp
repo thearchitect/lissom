@@ -429,7 +429,7 @@ float scaledInhibRadius(int w) {
 
 
 float scaledFinalExcRadius(int w) {
-  return MAX(1.5, (float)w/44.0);
+  return MAX(2.5, (float)w/44.0);
 }
 
 
