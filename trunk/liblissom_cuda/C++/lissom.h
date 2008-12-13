@@ -25,6 +25,9 @@
 #endif
 
 
+#define RETINATHR 0.2f
+
+
 #define LAYER_LISSOM 0
 #define LAYER_RETINA 1
 #define LAYER_LGN 2
@@ -68,7 +71,8 @@ public:
 
 
   //scaleAreaOrDensity: 0 for area, 1 for density
-  LISSOM(int w_, int h_, float rf_, Layer *afferent, int numinputs_=1, int scaleAreaOrDensity=0, int weightsup=0, int weightsdown=0, int offsety=0, float offsetyAff=0.0, float rE_=0.0, float rI_=0.0, float rEf_=1.13, float alphaA_=0.007, float alphaE_=0.00466167, float alphaI_=0.0330078, float gammaE_=0.9, float gammaI_=0.9, int settletime_=9, float lowerthr_=0.1, float upperthr_=0.65);
+  LISSOM(int w_, int h_, float rf_, Layer *afferent, int numinputs_=1, int scaleAreaOrDensity=0, int weightsup=0, int weightsdown=0, int offsety=0, float offsetyAff=0.0, float rE_=0.0, float rI_=0.0, float rEf_=1.13, float alphaA_=0.007, float alphaE_=0.0330078, float alphaI_=0.00466167, float gammaE_=0.9, float gammaI_=0.9, int settletime_=9, float lowerthr_=0.1, float upperthr_=0.65);
+
   ~LISSOM();
 
   LISSOM(char *file);
@@ -81,7 +85,7 @@ public:
   void setAlphaE(float a);
   void setAlphaI(float a);
   void setRef(float r);
-  void setRe(float r);
+  void setRe(float r, int offsety=0);
   void setSettleTime(int t) { settletime=t; }
 
   void getweight(unsigned char *im, int num, int x, int y, int widthstep=0);
@@ -117,7 +121,9 @@ public:
   void setPatternsPerIteration(int i) { if(i>=1) patternsperiteration=i; } //Don't forget to set it!
 
   void setinput(unsigned char *im, int widthstep=0);
-  void randomGaussian(int centered=0, int number=0, float a2=56.25, float b2=2.25, int x=-1, int y=-1, int angledeg=-1, float thr=0.369f);
+  void randomGaussian(int centered=0, int number=0, float a2=56.25, float b2=2.25, int x=-1, int y=-1, int angledeg=-1, float thr=RETINATHR);//0.369f);
+  void OrientedBar(float m, float q, float a2=1.0, float thr=RETINATHR); //m==100 for vertical line
+  //thrs = 1/e^2?  == 0.135
   void getoutput(unsigned char *im, int widthstep=0);
 
 };

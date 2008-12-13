@@ -33,7 +33,7 @@ __device__ unsigned long random(unsigned long num) { //0..100000
 
 
 
-__global__ void InitGPUWeights(int w, int h, CUDAWEIGHT *weights, int *numreceptors, int type, float rf, float ratioW, float ratioH, float offset, unsigned long randseed, int *startindex, unsigned int inputw, int weightsup, int weightsdown, int offsety) {
+__global__ void InitGPUWeights(int w, int h, CUDAWEIGHT *weights, int *numreceptors, int type, float rf, float ratioW, float ratioH, float offset, unsigned long randseed, long long *startindex, unsigned int inputw, int weightsup, int weightsdown, int offsety) {
   int size=w*h;
 
   int rfInt=(int)rf;
@@ -62,6 +62,7 @@ __global__ void InitGPUWeights(int w, int h, CUDAWEIGHT *weights, int *numrecept
           randseed=random(randseed);
 
           float val=(float)randseed / 100000.0f;
+          val=(val+0.05)/1.05;
 
 
           CUDAWEIGHT tmp;
@@ -94,12 +95,12 @@ __global__ void InitGPUWeights(int w, int h, CUDAWEIGHT *weights, int *numrecept
 
 
 
-__global__ void NormalizeWeights(int w, int h, CUDAWEIGHT *weights, int *numreceptors, int *startindex, int afferent, float *temp) {
+__global__ void NormalizeWeights(int w, int h, CUDAWEIGHT *weights, int *numreceptors, long long *startindex, int afferent, float *temp) {
   int size=w*h;
 
 
   __shared__ int numR;
-  __shared__ int start;
+  __shared__ long long start;
   __shared__ float sum[THREADS];
 
   __shared__ float current;
@@ -154,12 +155,12 @@ __global__ void NormalizeWeights(int w, int h, CUDAWEIGHT *weights, int *numrece
 
 
 
-__global__ void NormalizeWeightsAfferent(int w, int h, CUDAWEIGHT *weights, int *numreceptors, int *startindex, float *temp) {
+__global__ void NormalizeWeightsAfferent(int w, int h, CUDAWEIGHT *weights, int *numreceptors, long long *startindex, float *temp) {
   int size=w*h;
 
 
   __shared__ int numR;
-  __shared__ int start;
+  __shared__ long long start;
 
   __shared__ float current;
 
@@ -211,11 +212,11 @@ __global__ void RandomGaussian(unsigned int inputWGPU, int inputw, int inputh, f
 
 
 
-__global__ void FirstStep(CUDAWEIGHT *weights, int *numreceptors, float *input, float *temp, int w, int h, unsigned int inputWGPU, int *startindex) {
+__global__ void FirstStep(CUDAWEIGHT *weights, int *numreceptors, float *input, float *temp, int w, int h, unsigned int inputWGPU, long long *startindex) {
   int size=w*h;
 
   __shared__ int numR;
-  __shared__ int start;
+  __shared__ long long start;
   __shared__ float sum[THREADS];
 
   for(int i=blockIdx.x; i<size; i+=gridDim.x) {
@@ -295,11 +296,11 @@ __global__ void ActivationFunction(float *input, float *output, int w, int h, fl
 
 
 
-__global__ void Step(int *numreceptors, float *temp, float *neurons, int w, int h, float gamma, int *startindex,   int *numreceptorsI, float gammaI, int *startindexI) {
+__global__ void Step(int *numreceptors, float *temp, float *neurons, int w, int h, float gamma, long long *startindex,   int *numreceptorsI, float gammaI, long long *startindexI) {
   int size=w*h;
 
   __shared__ int numR, numRI;
-  __shared__ int start, startI;
+  __shared__ long long start, startI;
   __shared__ float sum[THREADS];
   __shared__ float sumI[THREADS];
 
@@ -322,7 +323,7 @@ __global__ void Step(int *numreceptors, float *temp, float *neurons, int w, int 
     for(int p=threadIdx.x; p<numR; p+=blockDim.x) {
       CUDAWEIGHT tmp = tex1Dfetch(texWeights, start + p); //weights[start + p];
 
-      if(tmp.x!=65000.0f) {
+      if(tmp.x!=650000.0f) {
         float inp = tex1Dfetch(texInput, tmp.x); //neurons[tmp.y*w + tmp.x];
         temptemp = temptemp + tmp.y * inp;
       }
@@ -331,7 +332,7 @@ __global__ void Step(int *numreceptors, float *temp, float *neurons, int w, int 
     for(int p=threadIdx.x; p<numRI; p+=blockDim.x) {
       CUDAWEIGHT tmp = tex1Dfetch(texWeightsI, startI + p); //weights[start + p];
 
-      if(tmp.x!=65000.0f) {
+      if(tmp.x!=650000.0f) {
         float inp = tex1Dfetch(texInput, tmp.x); //neurons[tmp.y*w + tmp.x];
         temptempI = temptempI + tmp.y * inp;
       }
@@ -368,14 +369,14 @@ __global__ void Step(int *numreceptors, float *temp, float *neurons, int w, int 
 
 
 
-__global__ void SetRe(int w, int h, CUDAWEIGHT *weights, int *numreceptors, float r, int *startindex) {
+__global__ void SetRe(int w, int h, CUDAWEIGHT *weights, int *numreceptors, float r, long long *startindex, int offsety) {
   int size=w*h;
 
   int rfInt=(int)r;
   int rf22=rfInt*rfInt;
 
   __shared__ int numR;
-  __shared__ int start;
+  __shared__ long long start;
 
   for(int i=blockIdx.x; i<size; i+=gridDim.x) {
     int x=i % w;
@@ -390,11 +391,11 @@ __global__ void SetRe(int w, int h, CUDAWEIGHT *weights, int *numreceptors, floa
 
     for(int p=threadIdx.x; p<numR; p+=blockDim.x) {
       CUDAWEIGHT tmp = tex1Dfetch(texWeights, start + p); //weights[start + p];
-//TODO: ATTENTION: code the learning function to avoid 65000s
+//TODO: ATTENTION: code the learning function to avoid 650000s
       int xxx=x - (unsigned int)tmp.x % w;
-      int yyy=y - (int)((unsigned int)tmp.x / w);
+      int yyy=y - ( (int)((unsigned int)tmp.x / w) - offsety );
       if(xxx*xxx + yyy*yyy > rf22) {
-        tmp.x=65000.0f;
+        tmp.x=650000.0f;
         tmp.y=0.0f;
         weights[start + p] = tmp;
       }
@@ -406,11 +407,11 @@ __global__ void SetRe(int w, int h, CUDAWEIGHT *weights, int *numreceptors, floa
 
 
 
-__global__ void AdjustWeights(CUDAWEIGHT *weights, int *numreceptors, float *input, float *neurons, int inputW, int w, int h, float alpha, int *startindex, int afferent, float *temp) {
+__global__ void AdjustWeights(CUDAWEIGHT *weights, int *numreceptors, float *input, float *neurons, int inputW, int w, int h, float alpha, long long *startindex, int afferent, float *temp, int offsety) {
   int size=w*h;
 
   __shared__ int numR;
-  __shared__ int start;
+  __shared__ long long start;
   __shared__ float neur_;
 
   __shared__ float sum[THREADS];
@@ -420,7 +421,7 @@ __global__ void AdjustWeights(CUDAWEIGHT *weights, int *numreceptors, float *inp
   for(int i=blockIdx.x; i<size; i+=gridDim.x) {
     if(threadIdx.x==0) {
       numR=numreceptors[i];
-      neur_=neurons[i];
+      neur_=neurons[i+w*offsety];
       start=startindex[i];
 
       if(afferent==1) current=temp[i];
@@ -438,7 +439,7 @@ __global__ void AdjustWeights(CUDAWEIGHT *weights, int *numreceptors, float *inp
     for(int p=threadIdx.x; p<numR; p+=blockDim.x) {
       CUDAWEIGHT tmp = tex1Dfetch(texWeights, start + p); //weights[start + p];
 
-      if(tmp.x!=65000.0f) {
+      if(tmp.x!=650000.0f) {
         float tmp_ = tmp.y + alpha*neuronval * tex1Dfetch(texInput, tmp.x);
 
         tempsum += tmp_;
@@ -468,8 +469,9 @@ __global__ void AdjustWeights(CUDAWEIGHT *weights, int *numreceptors, float *inp
       for(int p=threadIdx.x; p<numR; p+=blockDim.x) {
         CUDAWEIGHT tmp = tex1Dfetch(texWeights, start + p); //weights[start + p];
 
-        if(tmp.x!=65000.0f) {
+        if(tmp.x<649999.0f) {
           float tmp_ = tmp.y + alpha*neuronval * tex1Dfetch(texInput, tmp.x);
+
           weights[start + p].y = tmp_ / tempsum; //input[tmp.y*inputW + tmp.x];
         }
 
@@ -485,11 +487,11 @@ __global__ void AdjustWeights(CUDAWEIGHT *weights, int *numreceptors, float *inp
 
 
 
-__global__ void AdjustWeightsAfferent(CUDAWEIGHT *weights, int *numreceptors, float *input, float *neurons, int inputW, int w, int h, float alpha, int *startindex, float *temp) {
+__global__ void AdjustWeightsAfferent(CUDAWEIGHT *weights, int *numreceptors, float *input, float *neurons, int inputW, int w, int h, float alpha, long long *startindex, float *temp, int offsety) {
   int size=w*h;
 
   __shared__ int numR;
-  __shared__ int start;
+  __shared__ long long start;
   __shared__ float neur_;
 
   __shared__ float current;
@@ -497,7 +499,7 @@ __global__ void AdjustWeightsAfferent(CUDAWEIGHT *weights, int *numreceptors, fl
   for(int i=blockIdx.x; i<size; i+=gridDim.x) {
     if(threadIdx.x==0) {
       numR=numreceptors[i];
-      neur_=neurons[i];
+      neur_=neurons[i+w*offsety];
       start=startindex[i];
 
       current = temp[i];
@@ -511,7 +513,7 @@ __global__ void AdjustWeightsAfferent(CUDAWEIGHT *weights, int *numreceptors, fl
     for(int p=threadIdx.x; p<numR; p+=blockDim.x) {
       CUDAWEIGHT tmp = tex1Dfetch(texWeights, start + p); //weights[start + p];
 
-      if(tmp.x!=65000.0f) {
+      if(tmp.x<649999.0f) {
         float tmp_ = tmp.y + alpha*neuronval * tex1Dfetch(texInput, tmp.x);
         weights[start + p].y = tmp_ / current; //input[tmp.y*inputW + tmp.x];
       }

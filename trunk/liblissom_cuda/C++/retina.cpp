@@ -71,6 +71,18 @@ void Retina::randomGaussian(int centered, int number, float a2, float b2, int x,
 
 
 
+void Retina::OrientedBar(float m, float q, float a2, float thr) {
+  float aa=sqrt(a2)*2.0;
+  CUDARetinaOrientedBar((CUDALISSOM *)cuda, w, h, m, q, a2, aa, thr);
+
+}
+
+
+
+
+
+
+
 
 
 

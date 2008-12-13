@@ -33,9 +33,11 @@
 
 #define writeint(a__, fp__) fwrite(&a__, sizeof(int), 1, fp__);
 #define writefloat(a__, fp__) fwrite(&a__, sizeof(float), 1, fp__)
+#define writelong(a__, fp__) fwrite(&a__, sizeof(long), 1, fp__);
 
 #define readint(a__, fp__) fread(&a__, sizeof(int), 1, fp__);
 #define readfloat(a__, fp__) fread(&a__, sizeof(float), 1, fp__)
+#define readlong(a__, fp__) fread(&a__, sizeof(long), 1, fp__);
 
 
 
@@ -199,9 +201,7 @@ void CUDASetAlphaI(CUDALISSOM *b, float a) {
 
 
 
-void CUDASetRe(CUDALISSOM *a, float r, int w, int h) {
-  //TODO: MAKE IT WORK ?!!!
-
+void CUDASetRe(CUDALISSOM *a, float r, int w, int h, int offsety) {
 
   #ifdef DEBUG
     unsigned int hTimer;
@@ -213,7 +213,7 @@ void CUDASetRe(CUDALISSOM *a, float r, int w, int h) {
 
   cudaBindTexture(0, texWeights, a->projections[0]->weights, a->projections[0]->weightssize*sizeof(CUDAWEIGHT));
 
-  SetRe<<<BLOCKS, THREADS>>>(w, h, a->projections[0]->weights, a->projections[0]->numreceptors, r, a->projections[0]->startindex);
+  SetRe<<<BLOCKS, THREADS>>>(w, h, a->projections[0]->weights, a->projections[0]->numreceptors, r, a->projections[0]->startindex, offsety);
   cudaThreadSynchronize();
 
   cudaUnbindTexture(texWeights);
@@ -264,12 +264,12 @@ CUDAPROJECTION *NewCUDAPROJECTION(int w, int h, int type, float rf, float alpha,
 
 
   a->numreceptors_host=(int *)malloc(w*h *sizeof(int));
-  a->startindex_host=(int *)malloc(w*h*sizeof(int));
+  a->startindex_host=(long long *)malloc(w*h*sizeof(long long));
 
   cudaMalloc( (void **)&(a->numreceptors), w*h *sizeof(int) );
-  cudaMalloc( (void **)&(a->startindex), w*h *sizeof(int) );
+  cudaMalloc( (void **)&(a->startindex), w*h *sizeof(long long) );
 
-  unsigned int weightssize=0;
+  long long weightssize=0;
 
   int rfInt=(int)rf;
   int rf22=rfInt*rfInt;
@@ -312,8 +312,7 @@ CUDAPROJECTION *NewCUDAPROJECTION(int w, int h, int type, float rf, float alpha,
 
   //Copy numreceptors_host and weights_host to GPU
   cudaMemcpy( a->numreceptors, a->numreceptors_host, w*h*sizeof(int), cudaMemcpyHostToDevice );
-  cudaMemcpy( a->startindex, a->startindex_host, w*h*sizeof(int), cudaMemcpyHostToDevice );
-
+  cudaMemcpy( a->startindex, a->startindex_host, w*h*sizeof(long long), cudaMemcpyHostToDevice );
 
 
   return a;
@@ -345,32 +344,42 @@ void CUDAGetInput(CUDALISSOM *a, unsigned char *im, int widthstep, int inputnum,
 */
 
 
-void CUDAGetWeight(CUDALISSOM *a, unsigned char *im, int widthstep, int num, int x, int y, int w, int h, int inputw, int inputh) { //0=exc, 1=inhib, 2..n=afferent
+void CUDAGetWeight(CUDALISSOM *a, unsigned char *im, int widthstep, int num, int x, int y, int w, int h, int inputw, int inputh, int offsety, float ratio) { //0=exc, 1=inhib, 2..n=afferent
 
-  int Windex=y*w + x;
+  int Windex=(y-offsety)*w + x;
   int start=a->projections[num]->startindex_host[Windex];
   int nn=a->projections[num]->numreceptors_host[Windex];
   CUDAWEIGHT *we=(CUDAWEIGHT *)malloc(nn *sizeof(CUDAWEIGHT));
 //weights[windex] -> we. then render them to image
+
+
   cudaMemcpy( we, a->projections[num]->weights+start, nn*sizeof(CUDAWEIGHT), cudaMemcpyDeviceToHost );
 
 
   for(int i=0; i<nn; i++) {
     int xxx, yyy;
+    int xx, yy;
     if(a->projections[num]->type==PROJECTION_AFFERENT) {
       xxx=(int)we[i].x % inputw;
       yyy=(int)we[i].x / inputw;
+
+      yyy=yyy-(float)y*ratio;
+
+      xx=xxx-x + inputw/2;
+      yy=yyy   + inputh/2;
     } else {
       xxx=(int)we[i].x % w;
       yyy=(int)we[i].x / w;
+
+      xx=xxx-x + inputw/2;
+      yy=yyy-y + inputh/2;
     }
 
-    int xx=xxx-x + inputw/2;
-    int yy=yyy-y + inputh/2;
 
     if(xx>=0 && xx<inputw && yy>=0 && yy<inputh) {
-      ((float *)im)[yy*inputw + xx] = we[i].y*4.0 *10.0;
+      ((float *)im)[yy*inputw + xx] = we[i].y*3.0 *10.0;
     }
+
   }
 
   free(we);
@@ -505,7 +514,8 @@ void CUDAStep(CUDALISSOM *a, int w, int h, float lowerthr, float upperthr, int r
 
 
 
-void CUDAAdjustWeights(CUDALISSOM *a, int w, int h, int inputWGPU, int inputh, int numinputs) {
+void CUDAAdjustWeights(CUDALISSOM *a, int w, int h, int inputWGPU, int inputh, int numinputs, int realh, int offsety) {
+  if(realh==0) realh=h;
 
   #ifdef DEBUG
     unsigned int hTimer;
@@ -513,7 +523,7 @@ void CUDAAdjustWeights(CUDALISSOM *a, int w, int h, int inputWGPU, int inputh, i
     cutStartTimer(hTimer);
   #endif
 
-  cudaMemset(a->temp, 0, w*h*sizeof(float));
+  cudaMemset(a->temp, 0, w*realh*sizeof(float));
 
   for(int i=0; i<numinputs; i++) {
     float *input=a->inputs_host[a->projections[i+2]->afferentnum];
@@ -523,7 +533,7 @@ void CUDAAdjustWeights(CUDALISSOM *a, int w, int h, int inputWGPU, int inputh, i
 
     cudaBindTexture(0, texWeights, a->projections[i+2]->weights, a->projections[2+i]->weightssize*sizeof(CUDAWEIGHT));
 
-    AdjustWeights<<<BLOCKS, THREADS>>>(a->projections[i+2]->weights, a->projections[i+2]->numreceptors, input, a->neurons, inputW, w, h, a->projections[i+2]->alpha, a->projections[i+2]->startindex, 1, a->temp);
+    AdjustWeights<<<BLOCKS, THREADS>>>(a->projections[i+2]->weights, a->projections[i+2]->numreceptors, input, a->neurons, inputW, w, h, a->projections[i+2]->alpha, a->projections[i+2]->startindex, 1, a->temp, offsety);
     cudaThreadSynchronize();
 
     cudaUnbindTexture(texWeights);
@@ -541,7 +551,7 @@ void CUDAAdjustWeights(CUDALISSOM *a, int w, int h, int inputWGPU, int inputh, i
 
     cudaBindTexture(0, texWeights, a->projections[i]->weights, a->projections[i]->weightssize*sizeof(CUDAWEIGHT));
 
-    AdjustWeightsAfferent<<<BLOCKS, THREADS>>>(a->projections[i]->weights, a->projections[i]->numreceptors, input, a->neurons, inputW, w, h, a->projections[i]->alpha, a->projections[i]->startindex, a->temp);
+    AdjustWeightsAfferent<<<BLOCKS, THREADS>>>(a->projections[i]->weights, a->projections[i]->numreceptors, input, a->neurons, inputW, w, h, a->projections[i]->alpha, a->projections[i]->startindex, a->temp, offsety);
     cudaThreadSynchronize();
 
     cudaUnbindTexture(texWeights);
@@ -550,15 +560,16 @@ void CUDAAdjustWeights(CUDALISSOM *a, int w, int h, int inputWGPU, int inputh, i
   }
 
 
+
   for(int i=0; i<2; i++) {
     float *input=a->neurons;
     int inputW=w;
 
-    cudaBindTexture(0, texInput, input, w*h*sizeof(float)); //*sizeof(float)?
+    cudaBindTexture(0, texInput, input, w*realh*sizeof(float)); //*sizeof(float)?
 
     cudaBindTexture(0, texWeights, a->projections[i]->weights, a->projections[i]->weightssize*sizeof(CUDAWEIGHT));
 
-    AdjustWeights<<<BLOCKS, THREADS>>>(a->projections[i]->weights, a->projections[i]->numreceptors, input, a->neurons, inputW, w, h, a->projections[i]->alpha, a->projections[i]->startindex, 0, 0);
+    AdjustWeights<<<BLOCKS, THREADS>>>(a->projections[i]->weights, a->projections[i]->numreceptors, input, a->neurons, inputW, w, h, a->projections[i]->alpha, a->projections[i]->startindex, 0, 0, offsety);
     cudaThreadSynchronize();
 
     cudaUnbindTexture(texWeights);
@@ -593,13 +604,13 @@ void CUDASaveProjection(CUDALISSOM *a, int w, int h, int i, FILE *fp) {
   cudaMemcpy( weights, proj->weights, proj->weightssize*sizeof(CUDAWEIGHT), cudaMemcpyDeviceToHost );  //TODO: OR LOAD GRADUALLY, WITHIN THE FOLLOWING LOOP?
 
 
-  unsigned int size=0;
+  long long size=0;
 
   for(int p=0; p<w*h; p++) {
     int count = 0;
 
     for(int k=0; k<proj->numreceptors_host[p]; k++) {
-      if(weights[proj->startindex_host[p] + k].x < 64999.0f  && weights[proj->startindex_host[p] + k].y>=0.00005 ) {
+      if(weights[proj->startindex_host[p] + k].x < 649999.0f  && weights[proj->startindex_host[p] + k].y>=0.00005 ) {
         count++;
       }
     }
@@ -608,7 +619,7 @@ void CUDASaveProjection(CUDALISSOM *a, int w, int h, int i, FILE *fp) {
   }
 
 
-  writeint(size, fp); //proj->weightssize!!!
+  writelong(size, fp); //proj->weightssize!!!
 
 
 
@@ -621,12 +632,12 @@ void CUDASaveProjection(CUDALISSOM *a, int w, int h, int i, FILE *fp) {
 
 
     for(int k=0; k<proj->numreceptors_host[p]; k++) {
-      if(weights[start + k].x < 64999.0f   && weights[proj->startindex_host[p] + k].y>=0.00005) {
+      if(weights[start + k].x < 649999.0f   && weights[proj->startindex_host[p] + k].y>=0.00005) {
         count++;
       }
     }
 
-    writeint(size, fp); //startindex
+    writelong(size, fp); //startindex
     size+=count;
 
 
@@ -634,7 +645,7 @@ void CUDASaveProjection(CUDALISSOM *a, int w, int h, int i, FILE *fp) {
 
 
     for(int k=0; k<proj->numreceptors_host[p]; k++) {
-      if(weights[start + k].x < 64999.0f   && weights[proj->startindex_host[p] + k].y>=0.00005) {
+      if(weights[start + k].x < 649999.0f   && weights[proj->startindex_host[p] + k].y>=0.00005) {
         writefloat(weights[start + k].x, fp);
         writefloat(weights[start + k].y, fp);
       }
@@ -672,14 +683,14 @@ void CUDALoadProjection(CUDALISSOM *a, int w, int h, int i, FILE *fp) {
   readfloat(proj->gamma, fp);
   readfloat(proj->alpha, fp);
 
-  readint(proj->weightssize, fp);
+  readlong(proj->weightssize, fp);
 
 
   proj->numreceptors_host=(int *)malloc(w*h *sizeof(int));
-  proj->startindex_host=(int *)malloc(w*h*sizeof(int));
+  proj->startindex_host=(long long *)malloc(w*h*sizeof(long long));
 
   cudaMalloc( (void **)&(proj->numreceptors), w*h *sizeof(int) );
-  cudaMalloc( (void **)&(proj->startindex), w*h *sizeof(int) );
+  cudaMalloc( (void **)&(proj->startindex), w*h *sizeof(long long) );
 
   cudaMalloc( (void **)&(proj->weights), proj->weightssize*sizeof(CUDAWEIGHT) );
 
@@ -689,7 +700,7 @@ void CUDALoadProjection(CUDALISSOM *a, int w, int h, int i, FILE *fp) {
   cudaMemcpy( weights, proj->weights, proj->weightssize*sizeof(CUDAWEIGHT), cudaMemcpyDeviceToHost );  //TODO: OR LOAD GRADUALLY, WITHIN THE FOLLOWING LOOP?
 
   for(int p=0; p<w*h; p++) {
-    readint(proj->startindex_host[p], fp); //startindex
+    readlong(proj->startindex_host[p], fp); //startindex
 
     int start = proj->startindex_host[p];
 
@@ -710,7 +721,7 @@ void CUDALoadProjection(CUDALISSOM *a, int w, int h, int i, FILE *fp) {
 
 
   cudaMemcpy( proj->numreceptors, proj->numreceptors_host, w*h*sizeof(int), cudaMemcpyHostToDevice );
-  cudaMemcpy( proj->startindex, proj->startindex_host, w*h*sizeof(int), cudaMemcpyHostToDevice );
+  cudaMemcpy( proj->startindex, proj->startindex_host, w*h*sizeof(long long), cudaMemcpyHostToDevice );
 
 
 }
