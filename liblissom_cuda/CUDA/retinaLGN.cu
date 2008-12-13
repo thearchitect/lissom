@@ -54,6 +54,38 @@ __global__ void RetinaRandomGaussian( int w, int h, float *input, float a2, floa
 
 
 
+__global__ void OrientedBar(int w, int h, float *neurons, float a2, float aa, float m, float q, float thr) {
+  int size=w*h;
+
+  float norm=sqrt(m*m+1);
+
+  for(unsigned int i=threadIdx.x+blockIdx.x*blockDim.x; i<size; i+=blockDim.x*gridDim.x) {
+    int x=i % w;
+    int y=(i/w);
+
+
+    float dist=0.0;
+    if(m==100.0) {
+      dist=fabs((float)x-q);
+    } else {
+      dist=fabs((float)x*m-(float)y+q)/norm;
+    }
+
+
+    if(dist<=aa) {
+      float res=expf( -(dist*dist)/(2.0*a2) );
+
+      if(res>=thr) {
+        neurons[y*w+x] = res;
+      }
+    }
+
+
+  }
+
+}
+
+
 
 
 __global__ void LGNRun(float *on, float *off, int w, int h, int inputw, int inputh, float ratioW, float ratioH, int rf) {
@@ -104,14 +136,19 @@ __global__ void LGNRun(float *on, float *off, int w, int h, int inputw, int inpu
       }
 
 
-temptemp*=10.2f;
+//temptemp*=10.2f;
+temptemp*=3.0f;
 
-if(temptemp<=0.1f) {
+if(temptemp<=0.1f && temptemp>=-0.1f) {
   temptemp=0.0f;
 } else if(temptemp>=0.65f) {
   temptemp=1.0f;
+} else if(temptemp<=-0.65f) {
+  temptemp=-1.0;
 } else {
-  temptemp=(temptemp-0.1f)/0.5f;
+  float off=1.0;
+  if(temptemp<0.0) off=-1.0;
+  temptemp=(temptemp-off*0.1f)/0.5f;
 }
 
 //      temptemp*=2.0f; //check this
@@ -205,6 +242,7 @@ void CUDARetinaRandomGaussian(CUDALISSOM *a, int centered, float a2, float b2, i
       x=(int)((float)rand()/(float(RAND_MAX)+1.0)*(float)(w-2*BORDER))+BORDER;
       y=(int)((float)rand()/(float(RAND_MAX)+1.0)*(float)(h-2*BORDER))+BORDER;
     }
+
     int theta_;
     if(angledeg==-1) {
       theta_=(int)((float)rand()/(float(RAND_MAX)+1.0)*180.0);
@@ -224,11 +262,37 @@ void CUDARetinaRandomGaussian(CUDALISSOM *a, int centered, float a2, float b2, i
 
     RetinaRandomGaussian<<<BLOCKS, THREADS>>>(w, h, a->neurons, a2, b2, x, y, sin(theta), cos(theta), thr); //Just generate Gaussian on the first afferent layer
     cudaThreadSynchronize();
+
+    x=-1;
   }
 
   #ifdef DEBUG
     cutStopTimer(hTimer);
     printf("Random Gaussian Generation Time: %fms\n", cutGetTimerValue(hTimer));
+  #endif
+
+}
+
+
+
+void CUDARetinaOrientedBar(CUDALISSOM *a, int w, int h, float m, float q, float a2, float aa, float thr) {
+
+  #ifdef DEBUG
+    unsigned int hTimer;
+    cutCreateTimer(&hTimer);
+    cutStartTimer(hTimer);
+  #endif
+
+  cudaMemset(a->neurons, 0, w*h*sizeof(float));
+
+
+  OrientedBar<<<BLOCKS, THREADS>>>(w, h, a->neurons, a2, aa, m, q, thr); //Just generate Gaussian on the first afferent layer
+  cudaThreadSynchronize();
+
+
+  #ifdef DEBUG
+    cutStopTimer(hTimer);
+    printf("Oriented Gaussian Bar Generation Time: %fms\n", cutGetTimerValue(hTimer));
   #endif
 
 }

@@ -56,12 +56,12 @@ typedef float2 CUDAWEIGHT;
 typedef struct {
   CUDAWEIGHT *weights; //weights[startindex + index].x/y/z
 
-  int *startindex_host;
-  int *startindex;
+  long long *startindex_host;
+  long long *startindex;
   int *numreceptors_host;
   int *numreceptors;
 
-  unsigned int weightssize;
+  long long weightssize;
 
   int type;
   int afferentnum;
@@ -95,7 +95,7 @@ void DeleteCUDAPROJECTION(CUDAPROJECTION *a, int w, int h);
 //void CUDASetInput(CUDALISSOM *a, unsigned char *im, int widthstep, int inputnum, unsigned int inputWGPU, int inputw, int inputh);
 //void CUDAGetInput(CUDALISSOM *a, unsigned char *im, int widthstep, int inputnum, unsigned int inputWGPU, int inputw, int inputh);
 void CUDAGetOutput(CUDALISSOM *a, unsigned char *im, int widthstep, int w, int h);
-void CUDAGetWeight(CUDALISSOM *a, unsigned char *im, int widthstep, int num, int x, int y, int w, int h, int inputw, int inputh);
+void CUDAGetWeight(CUDALISSOM *a, unsigned char *im, int widthstep, int num, int x, int y, int w, int h, int inputw, int inputh, int offsety=0, float ratio=1.0f);
 
 void CUDARandomGaussian(CUDALISSOM *a, int centered, float a2, float b2, unsigned int inputWGPU, int inputw, int inputh, int number=1);
 
@@ -110,9 +110,9 @@ void CUDASetAlphaI(CUDALISSOM *b, float a);
 
 void CUDANormalizeWeights(CUDALISSOM *a, int numinputs, int w, int h);
 
-void CUDASetRe(CUDALISSOM *a, float r, int w, int h);
+void CUDASetRe(CUDALISSOM *a, float r, int w, int h, int offsety=0);
 
-void CUDAAdjustWeights(CUDALISSOM *a, int w, int h, int inputWGPU, int inputh, int numinputs);
+void CUDAAdjustWeights(CUDALISSOM *a, int w, int h, int inputWGPU, int inputh, int numinputs, int realh=0, int offsety=0);
 
 void CUDASave(CUDALISSOM *a, int w, int h, int numinputs, FILE *fp);
 void CUDALoad(CUDALISSOM *a, int w, int h, int numinputs, FILE *fp);
@@ -124,7 +124,7 @@ void CUDADeleteRetina(CUDALISSOM *a);
 
 void CUDARetinaSetInput(CUDALISSOM *a, unsigned char *im, int widthstep, int w, int h);
 void CUDARetinaRandomGaussian(CUDALISSOM *a, int centered, float a2, float b2, int w, int h, int number, int x, int y, int angledeg, float thr);
-
+void CUDARetinaOrientedBar(CUDALISSOM *a, int w, int h, float m, float q, float a2, float aa, float thr);
 
 
 CUDALISSOM *CUDANewLGN(int w, int h);

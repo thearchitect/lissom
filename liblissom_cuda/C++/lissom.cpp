@@ -21,13 +21,16 @@
 #include <time.h>
 #include <math.h>
 
+#include <cutil.h>
+#include <cuda_runtime.h>
+
+
 #include "lissom.h"
 
 #include "../CUDA/cudaLissom.h"
 
 
 #define ROUND(x) ( x-floor(x)>0.5 ? (int)x+1 : (int)x )
-#define MAX(x, y) ( x>=y ? x : y )
 
 
 #define writeint(a__, fp__) fwrite(&a__, sizeof(int), 1, fp__);
@@ -55,6 +58,7 @@ LISSOM::LISSOM(int w_, int h_, float rf_, Layer *afferent, int numinputs_, int s
   patternsperiteration=1;
 
 
+
   if(rE_==0.0) {
 //    rE_=(float)w/10.0;
     rE_=5.0;
@@ -70,7 +74,7 @@ LISSOM::LISSOM(int w_, int h_, float rf_, Layer *afferent, int numinputs_, int s
     if(rI_==11.5) rI_=scaledInhibRadius(w);
     if(rEf_==1.13) rEf_=scaledFinalExcRadius(w);
   } else if(scaleAreaOrDensity==0) {
-    if(patternsperiteration==1) patternsperiteration=scaledPatternsPerIteration(inputw, rf);
+//    if(patternsperiteration==1) patternsperiteration=scaledPatternsPerIteration(inputw, rf);
   }
 
 
@@ -100,7 +104,6 @@ LISSOM::LISSOM(int w_, int h_, float rf_, Layer *afferent, int numinputs_, int s
 
 
   cuda=NewCUDALISSOM(w, h, inputw, inputh, &inputWGPU, numinputs, rf, rE, rI, alphaA, alphaE, alphaI, ratioW, ratioH, rf, gammaE, -gammaI, weightsup, weightsdown, 0, offsety, offsetyAff);
-
 
 
 }
@@ -144,6 +147,7 @@ LISSOM::LISSOM(char *file) {
 
 
   cuda=NewCUDALISSOM(w, h, inputw, inputh, &inputWGPU, numinputs, rf, rE, rI, alphaA, alphaE, alphaI, ratioW, ratioH, rf, gammaE, -gammaI, 1);
+
 
 
   CUDALoad((CUDALISSOM *)cuda, w, h, numinputs, fp);
@@ -194,6 +198,7 @@ void LISSOM::load(char *file) {
 
 
   cuda=NewCUDALISSOM(w, h, inputw, inputh, &inputWGPU, numinputs, rf, rE, rI, alphaA, alphaE, alphaI, ratioW, ratioH, rf, gammaE, -gammaI, 1);
+
 
 
   CUDALoad((CUDALISSOM *)cuda, w, h, numinputs, fp);
@@ -269,7 +274,7 @@ void LISSOM::ConnectAfferent(Layer *afferent, int afferentnum) {
 
       inputWGPU=afferent->w;
 
-      afferent->patternsperiteration=patternsperiteration;
+//      afferent->patternsperiteration=patternsperiteration;
 
       float w0_=inputw-2*rf;
       float h0_=inputh-2*rf;
@@ -304,6 +309,8 @@ void LISSOM::ConnectAfferent(Layer *afferent, int afferentnum) {
 
 void LISSOM::FirstStep() {
   CUDAFirstStep((CUDALISSOM *)cuda, w, h, lowerthr, upperthr, numinputs, inputWGPU, inputh);
+
+
 }
 
 
@@ -313,6 +320,8 @@ void LISSOM::Step(int iters) {
 
   for(int o=0; o<iters; o++) {
     CUDAStep((CUDALISSOM *)cuda, w, h, lowerthr, upperthr);
+
+
   }
 
 }
@@ -367,15 +376,18 @@ void LISSOM::setRef(float r) {
 
 void LISSOM::normalizeweights() {
   CUDANormalizeWeights((CUDALISSOM *)cuda, numinputs, w, h);
+
+
 }
 
 
 
-void LISSOM::setRe(float r) {
-  if(r!=rEf) {
+void LISSOM::setRe(float r, int offsety) {
+  if(r>=rEf) {
     rE=r;
 
-    CUDASetRe((CUDALISSOM *)cuda, r, w, h);
+    CUDASetRe((CUDALISSOM *)cuda, r, w, h, offsety);
+
 
     this->normalizeweights();
   }
@@ -386,14 +398,17 @@ void LISSOM::setRe(float r) {
 
 void LISSOM::AdjustWeights() {
   CUDAAdjustWeights((CUDALISSOM *)cuda, w, h, inputWGPU, inputh, numinputs);
+
+
 }
 
 
 
 void LISSOM::getweight(unsigned char *im, int num, int x, int y, int widthstep) {
-  if(widthstep==0) widthstep=inputw;
+  if(widthstep==0) widthstep=inputw*sizeof(float);
 
   CUDAGetWeight((CUDALISSOM *)cuda, im, widthstep, num, x, y, w, h, inputw, inputh);
+
 }
 
 

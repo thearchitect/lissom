@@ -42,7 +42,7 @@ int main() {
 
   Retina *retina = new Retina(RetinaN, RetinaN);
 
-  LISSOM *layer = new LISSOM(N, N, 6.0, retina, 1, 1); //0
+  LISSOM *layer = new LISSOM(N, N, 6.0, retina, 1, 0); //0
   float Rei=layer->rE, Ref=layer->rEf;
 
 //layer->load("net.lissom");
@@ -126,7 +126,6 @@ if(o==200) {
 
   retina->randomGaussian(1);
 
-
   retina->getoutput((unsigned char *)im->imageData, im->widthStep);
 
 
@@ -140,7 +139,8 @@ if(o==200) {
   layer->Step();
 
 
-//layer->getweight((unsigned char *)im->imageData, 1, 24, 24, im->widthStep);
+
+//layer->getweight((unsigned char *)im->imageData, 2, 20, 23, im->widthStep);
 
 
   layer->getoutput((unsigned char *)map->imageData, map->widthStep);
