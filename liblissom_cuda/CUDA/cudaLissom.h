@@ -86,7 +86,7 @@ typedef struct {
 
 
 
-CUDALISSOM *NewCUDALISSOM(int w, int h, int inputw, int inputh, unsigned int *inputWGPU, int numinputs, float rA, float rE, float rI, float alphaA, float alphaE, float alphaI, float ratioW, float ratioH, float offset, float gammaE, float gammaI, int weightsup=0, int weightsdown=0, int donotinit=0, int offsety=0, float offsetyAdd=0.0);
+CUDALISSOM *NewCUDALISSOM(int w, int h, int inputw, int inputh, unsigned int *inputWGPU, int numinputs, float rA, float rE, float rI, float alphaA, float alphaE, float alphaI, float ratioW, float ratioH, float offset, float gammaE, float gammaI, int weightsup=0, int weightsdown=0, int donotinit=0, int offsety=0, float offsetyAff=0.0, int realh=0);
 void DeleteCUDALISSOM(CUDALISSOM *a, int numinputs, int w, int h);
 
 CUDAPROJECTION *NewCUDAPROJECTION(int w, int h, int type, float rf, float alpha, float ratioW, float ratioH, float offset, float gamma, int weightsup, int weightsdown, int afferentnum=0);

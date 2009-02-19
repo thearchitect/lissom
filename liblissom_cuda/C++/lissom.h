@@ -71,7 +71,7 @@ public:
 
 
   //scaleAreaOrDensity: 0 for area, 1 for density
-  LISSOM(int w_, int h_, float rf_, Layer *afferent, int numinputs_=1, int scaleAreaOrDensity=0, int weightsup=0, int weightsdown=0, int offsety=0, float offsetyAff=0.0, float rE_=0.0, float rI_=0.0, float rEf_=1.13, float alphaA_=0.007, float alphaE_=0.0330078, float alphaI_=0.00466167, float gammaE_=0.9, float gammaI_=0.9, int settletime_=9, float lowerthr_=0.1, float upperthr_=0.65);
+  LISSOM(int w_, int h_, float rf_, Layer *afferent, int numinputs_=1, int scaleAreaOrDensity=0, int weightsup=0, int weightsdown=0, int offsety=0, float offsetyAff=0.0, int realh=0, float rE_=0.0, float rI_=0.0, float rEf_=1.13, float alphaA_=0.007, float alphaE_=0.0330078, float alphaI_=0.00466167, float gammaE_=0.9, float gammaI_=0.9, int settletime_=9, float lowerthr_=0.1, float upperthr_=0.65);
 
   ~LISSOM();
 
