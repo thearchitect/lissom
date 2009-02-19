@@ -41,7 +41,7 @@
 
 
 
-LISSOM::LISSOM(int w_, int h_, float rf_, Layer *afferent, int numinputs_, int scaleAreaOrDensity, int weightsup, int weightsdown, int offsety, float offsetyAff, float rE_, float rI_, float rEf_, float alphaA_, float alphaE_, float alphaI_, float gammaE_, float gammaI_, int settletime_, float lowerthr_, float upperthr_) {
+LISSOM::LISSOM(int w_, int h_, float rf_, Layer *afferent, int numinputs_, int scaleAreaOrDensity, int weightsup, int weightsdown, int offsety, float offsetyAff, int realh, float rE_, float rI_, float rEf_, float alphaA_, float alphaE_, float alphaI_, float gammaE_, float gammaI_, int settletime_, float lowerthr_, float upperthr_) {
   w=w_;
   h=h_;
   rf=rf_;
@@ -101,9 +101,11 @@ LISSOM::LISSOM(int w_, int h_, float rf_, Layer *afferent, int numinputs_, int s
   ratioH=(float)h0_/(float)h;
 
 
+  if(realh==0) realh=h;
 
 
-  cuda=NewCUDALISSOM(w, h, inputw, inputh, &inputWGPU, numinputs, rf, rE, rI, alphaA, alphaE, alphaI, ratioW, ratioH, rf, gammaE, -gammaI, weightsup, weightsdown, 0, offsety, offsetyAff);
+
+  cuda=NewCUDALISSOM(w, h, inputw, inputh, &inputWGPU, numinputs, rf, rE, rI, alphaA, alphaE, alphaI, ratioW, ratioH, rf, gammaE, -gammaI, weightsup, weightsdown, 0, offsety, offsetyAff, realh);
 
 
 }

@@ -33,7 +33,7 @@ __device__ unsigned long random(unsigned long num) { //0..100000
 
 
 
-__global__ void InitGPUWeights(int w, int h, CUDAWEIGHT *weights, int *numreceptors, int type, float rf, float ratioW, float ratioH, float offset, unsigned long randseed, long long *startindex, unsigned int inputw, int weightsup, int weightsdown, int offsety) {
+__global__ void InitGPUWeights(int w, int h, CUDAWEIGHT *weights, int *numreceptors, int type, float rf, float ratioW, float ratioH, float offset, unsigned long randseed, long long *startindex, unsigned int inputw, int weightsup, int weightsdown, int offsety, int realh) {
   int size=w*h;
 
   int rfInt=(int)rf;
@@ -58,7 +58,7 @@ __global__ void InitGPUWeights(int w, int h, CUDAWEIGHT *weights, int *numrecept
 
       if(j*j + k*k <= rf22) {
 
-        if( type==PROJECTION_AFFERENT || (type!=PROJECTION_AFFERENT && (x+j>=0 && x+j<w && (y+k>=0 || weightsup==1) && (y+k<h || weightsdown==1) ) ) ) {
+        if( type==PROJECTION_AFFERENT || (type!=PROJECTION_AFFERENT && (x+j>=0 && x+j<w && (y+k>=0 || (weightsup==1 && y+k+offsety>=0) ) && (y+k<h || (weightsdown==1 && y+k+offsety<realh) ) ) ) ) {
           randseed=random(randseed);
 
           float val=(float)randseed / 100000.0f;

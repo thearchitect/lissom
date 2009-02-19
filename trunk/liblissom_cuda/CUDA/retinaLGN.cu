@@ -137,18 +137,18 @@ __global__ void LGNRun(float *on, float *off, int w, int h, int inputw, int inpu
 
 
 //temptemp*=10.2f;
-temptemp*=3.0f;
+temptemp*=10.0; //7.5f; //10.2f;//3.0f;
 
 if(temptemp<=0.1f && temptemp>=-0.1f) {
   temptemp=0.0f;
 } else if(temptemp>=0.65f) {
-  temptemp=1.0f;
+  temptemp=0.999f;
 } else if(temptemp<=-0.65f) {
-  temptemp=-1.0;
+  temptemp=-0.999;
 } else {
   float off=1.0;
   if(temptemp<0.0) off=-1.0;
-  temptemp=(temptemp-off*0.1f)/0.5f;
+  temptemp=(temptemp-off*0.1f)/0.55f;
 }
 
 //      temptemp*=2.0f; //check this

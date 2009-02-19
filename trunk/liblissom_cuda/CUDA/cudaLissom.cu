@@ -47,8 +47,10 @@ extern "C" {
 
 
 
-CUDALISSOM *NewCUDALISSOM(int w, int h, int inputw, int inputh, unsigned int *inputWGPU, int numinputs, float rA, float rE, float rI, float alphaA, float alphaE, float alphaI, float ratioW, float ratioH, float offset, float gammaE, float gammaI, int weightsup, int weightsdown, int donotinit, int offsety, float offsetyAff) {
+CUDALISSOM *NewCUDALISSOM(int w, int h, int inputw, int inputh, unsigned int *inputWGPU, int numinputs, float rA, float rE, float rI, float alphaA, float alphaE, float alphaI, float ratioW, float ratioH, float offset, float gammaE, float gammaI, int weightsup, int weightsdown, int donotinit, int offsety, float offsetyAff, int realh) {
   srand((unsigned)(time(0)));
+
+  if(realh==0) realh=h;
 
 
   CUDALISSOM *a=(CUDALISSOM *)malloc(sizeof(CUDALISSOM));
@@ -102,7 +104,7 @@ if(offsetyAff>=0.001) {
     for(int i=0; i<numinputs+2; i++) {
       long randseed=(long)(FABS((float)rand()/(float(RAND_MAX)+1.0))*100000.0);
 
-      InitGPUWeights<<<BLOCKS, THREADS>>>(w, h, a->projections[i]->weights, a->projections[i]->numreceptors, a->projections[i]->type, a->projections[i]->rf, ratioW, ratioH, offset, randseed, a->projections[i]->startindex, *inputWGPU, weightsup, weightsdown, offsety);
+      InitGPUWeights<<<BLOCKS, THREADS>>>(w, h, a->projections[i]->weights, a->projections[i]->numreceptors, a->projections[i]->type, a->projections[i]->rf, ratioW, ratioH, offset, randseed, a->projections[i]->startindex, *inputWGPU, weightsup, weightsdown, offsety, realh);
       cudaThreadSynchronize();
     }
 
@@ -536,6 +538,7 @@ void CUDAAdjustWeights(CUDALISSOM *a, int w, int h, int inputWGPU, int inputh, i
     AdjustWeights<<<BLOCKS, THREADS>>>(a->projections[i+2]->weights, a->projections[i+2]->numreceptors, input, a->neurons, inputW, w, h, a->projections[i+2]->alpha, a->projections[i+2]->startindex, 1, a->temp, offsety);
     cudaThreadSynchronize();
 
+
     cudaUnbindTexture(texWeights);
 
     cudaUnbindTexture(texInput);
@@ -543,15 +546,15 @@ void CUDAAdjustWeights(CUDALISSOM *a, int w, int h, int inputWGPU, int inputh, i
 
 
   //Normalize afferent weights
-  for(int i=2; i<2+numinputs; i++) {
-    float *input=a->inputs_host[a->projections[i]->afferentnum];
+  for(int i=0; i<numinputs; i++) {
+    float *input=a->inputs_host[a->projections[i+2]->afferentnum];
     int inputW=inputWGPU;
 
     cudaBindTexture(0, texInput, input, inputW*inputh*sizeof(float)); //*sizeof(float)?
 
-    cudaBindTexture(0, texWeights, a->projections[i]->weights, a->projections[i]->weightssize*sizeof(CUDAWEIGHT));
+    cudaBindTexture(0, texWeights, a->projections[i+2]->weights, a->projections[i+2]->weightssize*sizeof(CUDAWEIGHT));
 
-    AdjustWeightsAfferent<<<BLOCKS, THREADS>>>(a->projections[i]->weights, a->projections[i]->numreceptors, input, a->neurons, inputW, w, h, a->projections[i]->alpha, a->projections[i]->startindex, a->temp, offsety);
+    AdjustWeightsAfferent<<<BLOCKS, THREADS>>>(a->projections[i+2]->weights, a->projections[i+2]->numreceptors, input, a->neurons, inputW, w, h, a->projections[i+2]->alpha, a->projections[i+2]->startindex, a->temp, offsety);
     cudaThreadSynchronize();
 
     cudaUnbindTexture(texWeights);
